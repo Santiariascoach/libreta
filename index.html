@@ -1104,7 +1104,7 @@ document.addEventListener("submit",async ev=>{
 });
 sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"){recovery=true;MODE="auth";render();}});
 function accountCard(){
-  return '<div class="card"><h3>Tu cuenta</h3><p class="small muted">'+esc(MYNAME)+" · "+esc(MYEMAIL)+(ROLE==="coach"?" · entrenador":"")+'</p><button class="btn ghost" data-act="logout">Cerrar sesión</button><p class="small muted">Versión 9 · rangos, día de partido y animaciones</p></div>';
+  return '<div class="card"><h3>Tu cuenta</h3><p class="small muted">'+esc(MYNAME)+" · "+esc(MYEMAIL)+(ROLE==="coach"?" · entrenador":"")+'</p><button class="btn ghost" data-act="logout">Cerrar sesión</button><p class="small muted">Versión 10 · readaptación de pierna</p></div>';
 }
 async function boot(){
   MODE="loading";render();
@@ -1155,14 +1155,14 @@ async function boot(){
 /* ---------- Borrador de sesión ---------- */
 function freshDraft(dayIdx,ready){
   const d=dayIdx==null?defaultDay():dayIdx;
-  const dr={day:d,started:Date.now(),date:new Date().toDateString(),items:{},swaps:{},ready:ready||null};
+  const dr={day:d,started:Date.now(),date:new Date().toDateString(),items:{},swaps:{},ready:ready||null,rev:S.rev||0};
   const lv=readyLevel(dr);
   S.program[d].ex.forEach(id=>{dr.items[id]=itemFor(id,lv);});
   return dr;
 }
 const draftTouched=dr=>Object.values(dr.items).some(it=>it.done.some(Boolean));
 function ensureDraft(){
-  if(draft&&!draftTouched(draft)&&draft.date!==new Date().toDateString())draft=null;
+  if(draft&&!draftTouched(draft)&&(draft.date!==new Date().toDateString()||(draft.rev||0)!==(S.rev||0)))draft=null;
   if(!draft){draft=freshDraft();saveDraft();}
 }
 function applyReady(){
