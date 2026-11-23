@@ -1,4 +1,4 @@
-const C="libreta-v7";
+const C="libreta-v8";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-180.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>Promise.all(ASSETS.map(a=>fetch(a,{cache:"no-store"}).then(r=>c.put(a,r)))))) ;self.skipWaiting();});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()));});
