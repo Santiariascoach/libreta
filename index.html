@@ -577,6 +577,19 @@ body.focusing #mic{z-index:27;bottom:calc(92px + env(safe-area-inset-bottom,0px)
 }
 @keyframes prSpin{from{transform:rotateY(540deg) scale(.4)}}
 @keyframes pulseG{50%{transform:scale(1.03)}}
+button.wd{font:inherit;color:var(--ink);cursor:pointer;transition:transform .12s}
+button.wd:active{transform:scale(.93)}
+.wd.moved::after{content:"↔";position:absolute;top:1px;right:3px;font-size:9px;color:var(--muted)}
+.wd{position:relative}
+.wd.src{background:var(--ink)!important;border-color:var(--ink)}
+.wd.src span,.wd.src b,.wd.src i{color:var(--surface)!important}
+.wstrip.picking .wd.tgt{border-color:var(--accent);border-style:dashed}
+.wstrip.picking .wd.off{opacity:.35}
+.wmove{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:14px;margin-top:6px}
+.wmove .row{display:flex;gap:8px;flex-wrap:wrap}
+.wmove ul{margin:0;padding-left:18px}
+.wmove.warn{background:var(--accent-soft)}
+.whint{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
 </style>
 </head>
 <body>
@@ -947,7 +960,15 @@ function autoWeek(){
   return wk;
 }
 const hasWeek=()=>!!(S.settings.week||teamCfg.matchDay!=null);
+const weekOv=()=>S.weekOv&&S.weekOv.ws===weekStartMs()&&Array.isArray(S.weekOv.days)&&S.weekOv.days.length===7?S.weekOv:null;
 function planWeek(){
+  const p=planBase(),ov=weekOv();
+  if(!ov)return p;
+  const days=ov.days.map((d,i)=>Object.assign({},d,{moved:d.from!==i}));
+  if(days.some(d=>d.s!=null&&!S.program[d.s]))return p;
+  return Object.assign({},p,{days,ov:true});
+}
+function planBase(){
   const wk=S.settings.week||autoWeek(),N=mainCount(),xi=extraIdx();
   const days=wk.map(f=>({foot:f,s:null,note:"",opt:false}));
   let k=0;
@@ -1104,7 +1125,7 @@ document.addEventListener("submit",async ev=>{
 });
 sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"){recovery=true;MODE="auth";render();}});
 function accountCard(){
-  return '<div class="card"><h3>Tu cuenta</h3><p class="small muted">'+esc(MYNAME)+" · "+esc(MYEMAIL)+(ROLE==="coach"?" · entrenador":"")+'</p><button class="btn ghost" data-act="logout">Cerrar sesión</button><p class="small muted">Versión 10 · readaptación de pierna</p></div>';
+  return '<div class="card"><h3>Tu cuenta</h3><p class="small muted">'+esc(MYNAME)+" · "+esc(MYEMAIL)+(ROLE==="coach"?" · entrenador":"")+'</p><button class="btn ghost" data-act="logout">Cerrar sesión</button><p class="small muted">Versión 11 · mover sesiones en la semana</p></div>';
 }
 async function boot(){
   MODE="loading";render();
@@ -1486,12 +1507,40 @@ function warmupHTML(id,w){
 }
 const STATUS_LBL={test:"Test",up:"Sube peso",down:"Baja peso",reps:"+ reps",hold:"Mantén",start:"Empieza",new:"Nuevo",deload:"Descarga",suave:"Día suave"};
 
+/* Mover sesiones dentro de la semana */
+let wkMove=null,wkPend=null;
+const isMatchIdx=(p,i)=>teamCfg.matchDay===i||p.days[i].foot==="partido";
+const wkCanPick=(p,i,wd)=>i>=todayIdx()&&!wd[i]&&!isMatchIdx(p,i);
+function wkSwap(days,a,b){const out=days.map((d,i)=>Object.assign({from:i},d));const x=out[a];out[a]=out[b];out[b]=x;return out;}
+function wkWarn(days){
+  const p=planWeek(),w=[],isLeg=d=>d&&d.s!=null&&!d.opt&&legDay(S.program[d.s]);
+  for(let i=0;i<6;i++)if(isLeg(days[i])&&isLeg(days[i+1]))w.push("Dos días de pierna seguidos ("+WEEKDAYS[i].toLowerCase()+" y "+WEEKDAYS[i+1].toLowerCase()+"): las piernas no llegan recuperadas a la segunda.");
+  for(let i=0;i<7;i++){if(!isMatchIdx(p,i))continue;const b=(i+6)%7;if(i>0&&isLeg(days[b]))w.push("Pierna el "+WEEKDAYS[b].toLowerCase()+", el día antes del partido: llegarías cargado.");if(i>1&&isLeg(days[(i+5)%7]))w.push("Pierna el "+WEEKDAYS[(i+5)%7].toLowerCase()+", 2 días antes del partido: mejor que sea suave.");}
+  let run=0;for(let i=todayIdx();i<7;i++){run=days[i]&&days[i].s!=null&&!days[i].opt?run+1:0;if(run===4){w.push("Cuatro días de gimnasio seguidos: deja al menos un descanso entre medias.");break;}}
+  return w;
+}
+function wkApply(days){
+  S.weekOv={ws:weekStartMs(),days:days.map(d=>({s:d.s,foot:d.foot,note:d.note||"",opt:!!d.opt,from:d.from}))};
+  if(S.weekOv.days.every((d,i)=>d.from===i))S.weekOv=null;
+  wkMove=null;wkPend=null;saveProfile();
+  if(draft&&!draftTouched(draft)){draft=freshDraft(null,draft.ready);saveDraft();}
+}
+function wkLbl(d){return d.s!=null?S.program[d.s].name:"descanso";}
+function moveBox(){
+  const p=planWeek();
+  if(wkPend){const sw=wkSwap(p.days,wkPend.a,wkPend.b);
+    return'<div class="wmove warn" role="alert"><strong>Ojo con este cambio</strong><ul>'+wkPend.w.map(x=>"<li>"+esc(x)+"</li>").join("")+'</ul><div class="row"><button class="btn primary" data-act="wk-ok">Mover igualmente</button><button class="btn ghost" data-act="wk-cancel">Cancelar</button></div></div>';}
+  if(wkMove!=null){const d=p.days[wkMove];
+    return'<div class="wmove"><span><strong>'+esc(wkLbl(d))+'</strong> del '+WEEKDAYS[wkMove].toLowerCase()+': toca el día al que la quieres llevar. Se intercambian.</span><div class="row"><button class="btn ghost" data-act="wk-cancel">Cancelar</button></div></div>';}
+  return'<div class="whint"><span class="small muted">Toca un día para moverlo.</span>'+(weekOv()?'<button class="linkbtn" data-act="wk-reset">Restablecer semana</button>':"")+"</div>";
+}
 function weekStrip(){
   if(!hasWeek())return"";
   const p=planWeek(),t=todayIdx(),md=teamCfg.matchDay,wd=weekDone();
-  return '<div class="wstrip" aria-label="Tu semana">'+p.days.map((d,i)=>{const s=wd[i],miss=!s&&i<t&&d.s!=null&&!d.opt;
+  return '<div class="wstrip'+(wkMove!=null?" picking":"")+'" aria-label="Tu semana">'+p.days.map((d,i)=>{const s=wd[i],miss=!s&&i<t&&d.s!=null&&!d.opt,can=wkCanPick(p,i,wd),tag=can?"button":"div",
+    cls=(d.moved?" moved":"")+(wkMove===i?" src":wkMove!=null?(can?" tgt":" off"):""),at=can?' data-act="wk-pick" data-i="'+i+'" aria-label="'+WEEKDAYS[i]+": "+esc(wkLbl(d))+(wkMove==null?". Tocar para mover":wkMove===i?". Seleccionado":". Llevar aquí")+'"':"";
     if(s)return'<div class="wd done'+(i===t?" today":"")+'" aria-label="'+WEEKDAYS[i]+': '+esc(s.day)+' hecha"><span>'+WD_SHORT[i]+"</span><b>✓</b><i>"+esc(abbr(s.day))+"</i></div>";
-    return'<div class="wd'+(i===t?" today":"")+(d.s!=null?" gym":"")+(d.opt?" opt":"")+(miss?" miss":"")+'"><span>'+WD_SHORT[i]+"</span><b>"+(d.opt?"+":d.s!=null?esc(abbr(S.program[d.s].name)):(i===md||d.foot==="partido")?"P":"·")+"</b><i>"+(miss?"no hecha":(i===md||d.foot==="partido")?"partido":d.opt?"opcional":d.foot==="descanso"?"descanso":"")+"</i></div>";}).join("")+"</div>";
+    return'<'+tag+' class="wd'+(i===t?" today":"")+(d.s!=null?" gym":"")+(d.opt?" opt":"")+(miss?" miss":"")+cls+'"'+at+'><span>'+WD_SHORT[i]+"</span><b>"+(d.opt?"+":d.s!=null?esc(abbr(S.program[d.s].name)):(i===md||d.foot==="partido")?"P":"·")+"</b><i>"+(miss?"no hecha":(i===md||d.foot==="partido")?"partido":d.opt?"opcional":d.foot==="descanso"?"descanso":"")+"</i></"+tag+">";}).join("")+"</div>"+moveBox();
 }
 function heroMeta(list,lv){
   const nSets=list.reduce((a,id)=>a+rx(id,lv).sets,0),mins=Math.round(nSets*2.6+list.length*3);
@@ -2292,6 +2341,16 @@ document.addEventListener("click",async ev=>{
     case"sum-week":sumWeek=v;break;
     case"sum-open":S.sumSeen=weekStartMs()-7*DAY;saveProfile();sumWeek="prev";view="progreso";progTab="resumen";window.scrollTo(0,0);break;
     case"vol-add":case"vol-del":{const e=S.ex[id];if(!e)break;if(a==="vol-add"&&e.sets<6){e.sets++;e.bonus=(e.bonus||0)+1;e.targets=(e.targets||[]).concat([e.targets&&e.targets.length?e.targets[e.targets.length-1]:e.repMin]);}else if(a==="vol-del"&&e.sets>2){e.sets--;e.bonus=(e.bonus||0)-1;e.targets=(e.targets||[]).slice(0,e.sets);}if(draft&&!draftTouched(draft))applyReady();saveProfile();toast(LIB[id].name+": "+e.sets+" series a partir de ahora");break;}
+    case"wk-pick":{const i=Number(t.dataset.i);
+      if(wkPend){wkPend=null;wkMove=i;break;}
+      if(wkMove==null){wkMove=i;break;}
+      if(wkMove===i){wkMove=null;break;}
+      const p=planWeek(),sw=wkSwap(p.days,wkMove,i),had=wkWarn(p.days),w=wkWarn(sw).filter(x=>!had.includes(x)),a=wkMove;
+      if(w.length){wkPend={a,b:i,w};break;}
+      wkApply(sw);toast(wkLbl(sw[i])+" pasa al "+WEEKDAYS[i].toLowerCase());break;}
+    case"wk-ok":{if(!wkPend)break;const p=planWeek(),b=wkPend.b,sw=wkSwap(p.days,wkPend.a,b);wkApply(sw);toast(wkLbl(sw[b])+" pasa al "+WEEKDAYS[b].toLowerCase());break;}
+    case"wk-cancel":wkMove=null;wkPend=null;break;
+    case"wk-reset":S.weekOv=null;wkMove=null;wkPend=null;saveProfile();if(draft&&!draftTouched(draft)){draft=freshDraft(null,draft.ready);saveDraft();}toast("Semana restablecida");break;
     case"train-anyway":draft.anyway=true;saveDraft();break;
     case"rpe":{const n=Number(v);it.rpe=it.rpe===n?null:n;it.effort=null;it.adjDone=false;saveDraft();break;}
     case"rpe-adj":{const e=S.ex[id];it.w=v==="down"?roundW(e,it.w*0.95):Math.round(((it.w||0)+e.inc)*100)/100;it.adjDone=true;saveDraft();toast("Peso de las series que quedan: "+unitW(id,it.w));break;}
