@@ -617,6 +617,7 @@ const LIB={
   rumano:{name:"Peso muerto rumano",kind:"main",equip:"barra",lower:true},
   dominadas:{name:"Dominadas",kind:"main",equip:"peso"},
   jalonneutro:{name:"Jalón al pecho con agarre neutro",kind:"main",equip:"maq"},
+  jalonsupino:{name:"Jalón con agarre supino",kind:"main",equip:"maq"},
   inclinado:{name:"Press inclinado con mancuernas",kind:"acc",equip:"manc"},
   jalon:{name:"Jalón al pecho",kind:"acc",equip:"maq"},
   remopolea:{name:"Remo en polea",kind:"acc",equip:"maq"},
@@ -658,7 +659,7 @@ const ALTS={
   militar:["hombromanc","hombromaq"],hombromanc:["hombromaq","militar"],hombromaq:["hombromanc","militar"],
   laterales:["lateralpolea"],lateralpolea:["laterales"],facepull:["pajaros"],pajaros:["facepull"],
   remo:["remomaq","remomanc"],remomaq:["remo","remomanc"],remopolea:["remomaq","remomanc"],remomanc:["remomaq","remopolea"],
-  jalon:["jalonneutro","remopolea"],jalonneutro:["jalon","remomaq"],dominadas:["jalonneutro","jalon"],
+  jalon:["jalonneutro","remopolea"],jalonneutro:["jalon","remomaq"],dominadas:["jalonsupino","jalonneutro"],jalonsupino:["jalon","jalonneutro"],
   curl:["curlpolea","curlmartillo"],curlpolea:["curl","curlmartillo"],curlmartillo:["curl","curlpolea"],
   triceps:["tricepsnuca","pressfrances"],tricepsnuca:["pressfrances","triceps"],pressfrances:["tricepsnuca","triceps"],
   sentadilla:["hacksquat","prensa"],hacksquat:["sentadilla","prensa"],prensa:["hacksquat","bulgara"],
@@ -671,7 +672,7 @@ const MUSCLES=[["pecho","Pecho",10],["espalda","Espalda",12],["hombro_ant","Homb
 const MUSC=(()=>{
   const press={pecho:1,triceps:.5,hombro_ant:.5},row={espalda:1,biceps:.5,hombro_post:.5},pull={espalda:1,biceps:.5},ohp={hombro_ant:1,triceps:.5,hombro_lat:.5};
   return{banca:press,inclinado:press,pressmanc:press,pressmaq:press,pressinclmaq:press,aperturas:{pecho:1},
-    remo:row,remopolea:row,remomanc:row,remomaq:row,dominadas:pull,jalon:pull,jalonneutro:pull,
+    remo:row,remopolea:row,remomanc:row,remomaq:row,dominadas:pull,jalon:pull,jalonsupino:{espalda:1,biceps:.75},jalonneutro:pull,
     militar:ohp,hombromanc:ohp,hombromaq:ohp,laterales:{hombro_lat:1},lateralpolea:{hombro_lat:1},facepull:{hombro_post:1},pajaros:{hombro_post:1},
     curl:{biceps:1},curlpolea:{biceps:1},curlmartillo:{biceps:1},triceps:{triceps:1},tricepsnuca:{triceps:1},pressfrances:{triceps:1},
     sentadilla:{cuad:1,gluteo:.5},hacksquat:{cuad:1,gluteo:.5},prensa:{cuad:1,gluteo:.5},cuadriceps:{cuad:1},bulgara:{cuad:1,gluteo:.5},zancadas:{cuad:1,gluteo:.5},
@@ -1125,7 +1126,7 @@ document.addEventListener("submit",async ev=>{
 });
 sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"){recovery=true;MODE="auth";render();}});
 function accountCard(){
-  return '<div class="card"><h3>Tu cuenta</h3><p class="small muted">'+esc(MYNAME)+" · "+esc(MYEMAIL)+(ROLE==="coach"?" · entrenador":"")+'</p><button class="btn ghost" data-act="logout">Cerrar sesión</button><p class="small muted">Versión 11 · mover sesiones en la semana</p></div>';
+  return '<div class="card"><h3>Tu cuenta</h3><p class="small muted">'+esc(MYNAME)+" · "+esc(MYEMAIL)+(ROLE==="coach"?" · entrenador":"")+'</p><button class="btn ghost" data-act="logout">Cerrar sesión</button><p class="small muted">Versión 12 · peso de kilo en kilo</p></div>';
 }
 async function boot(){
   MODE="loading";render();
@@ -1260,7 +1261,7 @@ function renderFocus(){
       h+='<div class="f-rest">'+restRing()+'<div class="f-next">'+(ni==null?"Siguiente ejercicio":"Siguiente: serie "+(ni+1)+" · "+it.reps[ni]+" × "+unitW(id,it.w))+'</div></div><div class="f-adj"><button class="btn ghost" data-act="t-add">+30 s</button><button class="btn ghost" data-act="t-skip">Saltar descanso</button></div>'+(ni!=null&&it.done.some(Boolean)?rpeHTML(id,it,true):"");
     }else if(i>=0){
       h+='<div class="f-sets">SERIE '+(i+1)+" DE "+it.done.length+'</div><div class="f-big">'+it.reps[i]+"<small>×</small>"+(it.w==null?"<small>?</small>":L.equip==="peso"&&!it.w?"<small>PC</small>":fmt(it.w)+"<small>kg</small>")+"</div>";
-      h+='<div class="f-adj"><div class="grp"><span>Reps</span><button class="step" data-act="r-" data-id="'+id+'" data-i="'+i+'" aria-label="Una rep menos">−</button><button class="step" data-act="r+" data-id="'+id+'" data-i="'+i+'" aria-label="Una rep más">+</button></div><div class="grp"><span>Peso</span><button class="step" data-act="w-" data-id="'+id+'" aria-label="Bajar peso">−</button>'+(it.w==null?'<input class="winput" id="fw-'+id+'" inputmode="decimal" data-w="'+id+'" placeholder="kg">':"")+'<button class="step" data-act="w+" data-id="'+id+'" aria-label="Subir peso">+</button></div></div>';
+      h+='<div class="f-adj"><div class="grp"><span>Reps</span><button class="step" data-act="r-" data-id="'+id+'" data-i="'+i+'" aria-label="Una rep menos">−</button><button class="step" data-act="r+" data-id="'+id+'" data-i="'+i+'" aria-label="Una rep más">+</button></div><div class="grp"><span>Peso</span><button class="step" data-act="w-" data-id="'+id+'" aria-label="Bajar 1 kg">−</button><input class="winput" id="fw-'+id+'" inputmode="decimal" data-w="'+id+'" value="'+(it.w==null?"":fmt(it.w))+'" placeholder="kg" aria-label="Peso en kg"><button class="step" data-act="w+" data-id="'+id+'" aria-label="Subir 1 kg">+</button></div></div>';
       h+='<button class="f-done" data-act="done" data-id="'+id+'" data-i="'+i+'">✓ HECHA</button>';
     }
     if(i<0){
@@ -1817,7 +1818,7 @@ function exCardActive(id,lv,list,expanded){
   (swapOpen===id?'<div class="swapbox"><span class="small muted">¿Máquina ocupada? Cambia por un ejercicio equivalente:</span><div class="chips">'+alts.map(a=>'<button class="chip" data-act="swap" data-id="'+id+'" data-v="'+a+'">'+esc(LIB[a].name)+"</button>").join("")+'</div><button class="chip keep" data-act="swap-keep" aria-pressed="'+swapKeep+'">'+(swapKeep?"✓ ":"")+"Guardar el cambio en mi rutina</button></div>":"")+
   '<div class="rx num">'+repTxtOf(r)+"<small>reps · "+unitW(id,r.w)+"</small></div>";
   if(L.equip==="barra")h+=platesHTML(it.w)+(nDone?"":warmupHTML(id,it.w));
-  h+='<div class="wrow"><label for="w-'+id+'">'+(L.equip==="peso"?"Lastre":"Peso")+'</label><button class="step" data-act="w-" data-id="'+id+'" aria-label="Bajar peso">−</button><input class="winput" id="w-'+id+'" inputmode="decimal" data-w="'+id+'" value="'+(it.w==null?"":fmt(it.w))+'" placeholder="kg"><button class="step" data-act="w+" data-id="'+id+'" aria-label="Subir peso">+</button><span class="small muted">kg</span></div>';
+  h+='<div class="wrow"><label for="w-'+id+'">'+(L.equip==="peso"?"Lastre":"Peso")+'</label><button class="step" data-act="w-" data-id="'+id+'" aria-label="Bajar 1 kg">−</button><input class="winput" id="w-'+id+'" inputmode="decimal" data-w="'+id+'" value="'+(it.w==null?"":fmt(it.w))+'" placeholder="kg"><button class="step" data-act="w+" data-id="'+id+'" aria-label="Subir 1 kg">+</button><span class="small muted">kg</span></div>';
   h+='<div class="sets">'+it.reps.map((rep,i)=>'<div class="set'+(it.done[i]?" done":"")+'"><div class="lbl">Serie '+(i+1)+"<b>objetivo "+r.targets[i]+'</b></div><div class="repctl"><button class="step" data-act="r-" data-id="'+id+'" data-i="'+i+'" aria-label="Una rep menos">−</button><span class="val">'+rep+'</span><button class="step" data-act="r+" data-id="'+id+'" data-i="'+i+'" aria-label="Una rep más">+</button></div><button class="check" data-act="done" data-id="'+id+'" data-i="'+i+'" aria-pressed="'+it.done[i]+'" aria-label="Marcar serie '+(i+1)+' hecha">✓</button></div>').join("")+"</div>";
   if(nDone)h+=rpeHTML(id,it);
   if(allDone){const nx=list.find(x=>draft.items[x].done.some(d=>!d));if(nx)h+='<button class="btn ghost block" data-act="ex-open" data-id="'+nx+'">Siguiente: '+esc(LIB[nx].name)+" →</button>";}
@@ -2363,7 +2364,7 @@ document.addEventListener("click",async ev=>{
     case"week-off":S.settings.week=null;if(draft&&!draftTouched(draft))draft=null;saveProfile();break;
     case"r-":it.reps[i]=Math.max(0,it.reps[i]-1);saveDraft();break;
     case"r+":it.reps[i]=Math.min(50,it.reps[i]+1);saveDraft();break;
-    case"w-":case"w+":{const e=S.ex[id];const base=it.w==null?(LIB[id].equip==="barra"?S.settings.bar:0):it.w;it.w=Math.max(0,Math.round((base+(a==="w+"?e.inc:-e.inc))*100)/100);saveDraft();break;}
+    case"w-":case"w+":{const e=S.ex[id];const base=it.w==null?(LIB[id].equip==="barra"?S.settings.bar:0):it.w;it.w=Math.max(0,Math.round((base+(a==="w+"?1:-1))*100)/100);saveDraft();break;}
     case"done":{
       if(it.w==null){toast("Escribe primero el peso que vas a usar en "+LIB[id].name);$("#w-"+id)&&$("#w-"+id).focus();return;}
       it.done[i]=!it.done[i];saveDraft();if(focusOn)focusId=id;else actOpen=id;
