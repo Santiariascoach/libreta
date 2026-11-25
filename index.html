@@ -647,6 +647,7 @@ const LIB={
   hombromaq:{name:"Press de hombro en máquina",kind:"main",equip:"maq"},
   lateralpolea:{name:"Elevación lateral en polea",kind:"acc",equip:"maq"},
   pajaros:{name:"Pájaros con mancuernas",kind:"acc",equip:"manc",inc:1},
+  pajarosmaq:{name:"Pájaros en máquina (contractora inversa)",kind:"acc",equip:"maq"},
   remomanc:{name:"Remo con mancuerna",kind:"acc",equip:"manc"},
   remomaq:{name:"Remo en máquina",kind:"main",equip:"maq"},
   curlpolea:{name:"Curl de bíceps en polea",kind:"acc",equip:"maq"},
@@ -657,7 +658,7 @@ const LIB={
 const ALTS={
   banca:["pressmaq","pressmanc"],pressmanc:["pressmaq","banca"],inclinado:["pressinclmaq","aperturas"],pressmaq:["banca","pressmanc"],
   militar:["hombromanc","hombromaq"],hombromanc:["hombromaq","militar"],hombromaq:["hombromanc","militar"],
-  laterales:["lateralpolea"],lateralpolea:["laterales"],facepull:["pajaros"],pajaros:["facepull"],
+  laterales:["lateralpolea"],lateralpolea:["laterales"],facepull:["pajarosmaq","pajaros"],pajaros:["pajarosmaq","facepull"],pajarosmaq:["facepull","pajaros"],
   remo:["remomaq","remomanc"],remomaq:["remo","remomanc"],remopolea:["remomaq","remomanc"],remomanc:["remomaq","remopolea"],
   jalon:["jalonneutro","remopolea"],jalonneutro:["jalon","remomaq"],dominadas:["jalonsupino","jalonneutro"],jalonsupino:["jalon","jalonneutro"],
   curl:["curlpolea","curlmartillo"],curlpolea:["curl","curlmartillo"],curlmartillo:["curl","curlpolea"],
@@ -673,7 +674,7 @@ const MUSC=(()=>{
   const press={pecho:1,triceps:.5,hombro_ant:.5},row={espalda:1,biceps:.5,hombro_post:.5},pull={espalda:1,biceps:.5},ohp={hombro_ant:1,triceps:.5,hombro_lat:.5};
   return{banca:press,inclinado:press,pressmanc:press,pressmaq:press,pressinclmaq:press,aperturas:{pecho:1},
     remo:row,remopolea:row,remomanc:row,remomaq:row,dominadas:pull,jalon:pull,jalonsupino:{espalda:1,biceps:.75},jalonneutro:pull,
-    militar:ohp,hombromanc:ohp,hombromaq:ohp,laterales:{hombro_lat:1},lateralpolea:{hombro_lat:1},facepull:{hombro_post:1},pajaros:{hombro_post:1},
+    militar:ohp,hombromanc:ohp,hombromaq:ohp,laterales:{hombro_lat:1},lateralpolea:{hombro_lat:1},facepull:{hombro_post:1},pajaros:{hombro_post:1},pajarosmaq:{hombro_post:1},
     curl:{biceps:1},curlpolea:{biceps:1},curlmartillo:{biceps:1},triceps:{triceps:1},tricepsnuca:{triceps:1},pressfrances:{triceps:1},
     sentadilla:{cuad:1,gluteo:.5},hacksquat:{cuad:1,gluteo:.5},prensa:{cuad:1,gluteo:.5},cuadriceps:{cuad:1},bulgara:{cuad:1,gluteo:.5},zancadas:{cuad:1,gluteo:.5},
     muerto:{gluteo:1,isquios:.5,espalda:.5},trapbar:{cuad:.5,gluteo:1,isquios:.5,espalda:.5},rumano:{isquios:1,gluteo:.5},rumanomanc:{isquios:1,gluteo:.5},
@@ -1126,7 +1127,7 @@ document.addEventListener("submit",async ev=>{
 });
 sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"){recovery=true;MODE="auth";render();}});
 function accountCard(){
-  return '<div class="card"><h3>Tu cuenta</h3><p class="small muted">'+esc(MYNAME)+" · "+esc(MYEMAIL)+(ROLE==="coach"?" · entrenador":"")+'</p><button class="btn ghost" data-act="logout">Cerrar sesión</button><p class="small muted">Versión 12 · peso de kilo en kilo</p></div>';
+  return '<div class="card"><h3>Tu cuenta</h3><p class="small muted">'+esc(MYNAME)+" · "+esc(MYEMAIL)+(ROLE==="coach"?" · entrenador":"")+'</p><button class="btn ghost" data-act="logout">Cerrar sesión</button><p class="small muted">Versión 13 · pájaros en máquina</p></div>';
 }
 async function boot(){
   MODE="loading";render();
